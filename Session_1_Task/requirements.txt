@@ -1,0 +1,8 @@
+kagglehub
+numpy
+pandas
+matplotlib
+Pillow
+scikit-learn
+imbalanced-learn
+joblib

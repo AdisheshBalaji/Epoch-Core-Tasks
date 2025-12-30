@@ -1,0 +1,50 @@
+Epoch 1/10
+Train Loss: 0.4760 | Train Acc: 0.8205
+Val   Loss: 0.4946 | Val   Acc: 0.7772
+Val Precision: 0.0000 | Recall: 0.0000 | F1: 0.0000 | AUC: 0.9042
+
+Epoch 2/10
+Train Loss: 0.3470 | Train Acc: 0.8231
+Val   Loss: 0.2563 | Val   Acc: 0.9275
+Val Precision: 1.0000 | Recall: 0.6744 | F1: 0.8056 | AUC: 0.9707
+
+Epoch 3/10
+Train Loss: 0.1897 | Train Acc: 0.9311
+Val   Loss: 0.1314 | Val   Acc: 0.9741
+Val Precision: 1.0000 | Recall: 0.8837 | F1: 0.9383 | AUC: 0.9950
+
+Epoch 4/10
+Train Loss: 0.1074 | Train Acc: 0.9623
+Val   Loss: 0.0794 | Val   Acc: 0.9845
+Val Precision: 1.0000 | Recall: 0.9302 | F1: 0.9639 | AUC: 0.9947
+
+Epoch 5/10
+Train Loss: 0.0637 | Train Acc: 0.9883
+Val   Loss: 0.0476 | Val   Acc: 0.9845
+Val Precision: 1.0000 | Recall: 0.9302 | F1: 0.9639 | AUC: 0.9972
+
+Epoch 6/10
+Train Loss: 0.0434 | Train Acc: 0.9857
+Val   Loss: 0.0418 | Val   Acc: 0.9948
+Val Precision: 1.0000 | Recall: 0.9767 | F1: 0.9882 | AUC: 0.9961
+
+Epoch 7/10
+Train Loss: 0.0940 | Train Acc: 0.9610
+Val   Loss: 0.0419 | Val   Acc: 0.9948
+Val Precision: 1.0000 | Recall: 0.9767 | F1: 0.9882 | AUC: 0.9975
+
+Epoch 8/10
+Train Loss: 0.0245 | Train Acc: 0.9935
+Val   Loss: 0.0403 | Val   Acc: 0.9948
+Val Precision: 1.0000 | Recall: 0.9767 | F1: 0.9882 | AUC: 0.9974
+
+Epoch 9/10
+Train Loss: 0.0159 | Train Acc: 0.9974
+Val   Loss: 0.0455 | Val   Acc: 0.9948
+Val Precision: 1.0000 | Recall: 0.9767 | F1: 0.9882 | AUC: 0.9963
+
+Epoch 10/10
+Train Loss: 0.0091 | Train Acc: 0.9987
+Val   Loss: 0.0428 | Val   Acc: 0.9948
+Val Precision: 1.0000 | Recall: 0.9767 | F1: 0.9882 | AUC: 0.9972
+

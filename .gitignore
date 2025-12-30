@@ -1,0 +1,6 @@
+./Session_2_Task/codes/mlp_encoder.joblib
+./Session_2_Task/codes/mlp_scaler.joblib
+./Session_2_Task/dataset/resume_data.csv
+./Session_2_Task/UpdatedResumeDataSet.csv
+./Session_2_Task/models/bert_tabular_model.pth
+./Session_2_Task/codes/bert_tabular_model.pth
