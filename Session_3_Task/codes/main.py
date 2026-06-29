@@ -23,15 +23,14 @@ app.add_middleware(
 )
 
 # ----------------------------
-# Device
+# Device  (CPU-only — ONNX Runtime handles its own execution provider)
 # ----------------------------
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = "cpu"
 
 # ----------------------------
 # Load shared assets once on startup
 # ----------------------------
-word2idx = torch.load("word2idx.pt", map_location=device)
-embedding_matrix = torch.load("embedding_matrix.pt", map_location=device)
+word2idx = torch.load("word2idx.pt", map_location="cpu", weights_only=True)
 idx2word = {idx: word for word, idx in word2idx.items()}
 
 
@@ -78,31 +77,24 @@ def predict_with_attention(
                    f"Choose from: {list(ATTENTION_REGISTRY.keys())}"
         )
 
-    # Load (or retrieve cached) model
+    # Load (or retrieve cached) ONNX session
     try:
-        model = get_model(model_name, attention_name, embedding_matrix)
-    except KeyError as exc:
+        session = get_model(model_name, attention_name)  # embedding baked into ONNX graph
+    except (KeyError, FileNotFoundError) as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
     # Encode & pad
     tokens = encode_text(text, word2idx)
     padded_tokens = pad_sequence_to_length(tokens, max_len, word2idx["<PAD>"])
 
-    input_tensor = torch.tensor([padded_tokens], dtype=torch.long).to(device)
+    input_np = np.array([padded_tokens], dtype=np.int64)   # shape [1, max_len]
 
-    with torch.no_grad():
-        output = model(input_tensor)
+    logits_np, attn_np = session.run(None, {"input": input_np})
 
-        if isinstance(output, tuple):
-            logits, attn_weights = output
-            attn_weights = attn_weights.cpu().numpy()[0].tolist()
-        else:
-            logits = output
-            attn_weights = np.zeros(len(padded_tokens)).tolist()
-
-        probs = torch.softmax(logits, dim=1)
-        prediction = torch.argmax(probs, dim=1).item()
-        confidence = probs[0][prediction].item()
+    # logits_np: [1, 2] float32  —  attn_np: [1, max_len] float32
+    probs = np.exp(logits_np) / np.exp(logits_np).sum(axis=1, keepdims=True)  # softmax
+    prediction = int(np.argmax(probs, axis=1)[0])
+    confidence = float(probs[0][prediction])
 
     # Strip padding from token list
     words = [
@@ -110,7 +102,7 @@ def predict_with_attention(
         for idx in padded_tokens
         if idx != word2idx["<PAD>"]
     ]
-    attn_weights = attn_weights[:len(words)]
+    attn_weights = attn_np[0, :len(words)].tolist()  # strip padding, numpy → list
 
     return {
         "model_name": model_name,

@@ -1,68 +1,61 @@
-import torch
+import os
+import onnxruntime as ort
 
-from utils import MODEL_REGISTRY, ATTENTION_REGISTRY
+# ---------------------------------------------------------------------------
+# ONNX weight-file lookup table.
+# Keys mirror the old PyTorch WEIGHT_PATHS so main.py needs minimal changes.
+# ---------------------------------------------------------------------------
+_ONNX_DIR = os.path.join(os.path.dirname(__file__), "..", "models", "onnx")
 
-from config import (
-    HIDDEN_SIZE,
-    OUTPUT_SIZE,
-    ATTN_DIM,
-    DROPOUT,
-)
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# ----------------------------
-# Weight-file lookup table.
-# ----------------------------
 WEIGHT_PATHS = {
-    ("vanilla_lstm",       "luong_general"): "../models/Vanilla LSTM with Luong General.pth",
-    ("vanilla_lstm",       "bahdanau"):      "../models/Vanilla LSTM with Bahdanau.pth",
-    ("bidirectional_lstm", "bahdanau"):      "../models/BiLSTM with Bahdanau.pth",
-    ("bidirectional_lstm", "luong_concat"):  "../models/BiLSTM with LuongConcat.pth",
+    ("vanilla_lstm",       "luong_general"): os.path.join(_ONNX_DIR, "vanilla_lstm__luong_general.onnx"),
+    ("vanilla_lstm",       "bahdanau"):      os.path.join(_ONNX_DIR, "vanilla_lstm__bahdanau.onnx"),
+    ("bidirectional_lstm", "bahdanau"):      os.path.join(_ONNX_DIR, "bidirectional_lstm__bahdanau.onnx"),
+    ("bidirectional_lstm", "luong_concat"):  os.path.join(_ONNX_DIR, "bidirectional_lstm__luong_concat.onnx"),
 }
 
-# Cache so each (model, attention) combo is only loaded once per process
-_loaded_models: dict = {}
+# Cache: (model_name, attention_name) → ort.InferenceSession
+_session_cache: dict = {}
 
 
-def get_model(model_name: str, attention_name: str, embedding_matrix):
+def get_model(model_name: str, attention_name: str, embedding_matrix=None):
     """
-    Return a cached, eval-mode model for the requested
+    Return a cached ONNX Runtime InferenceSession for the requested
     (model_name, attention_name) combination.
 
-    Raises KeyError if the combination has no trained weights.
+    `embedding_matrix` is accepted for API compatibility but ignored —
+    the embedding weights are already baked into the ONNX graph.
+
+    Raises KeyError if the combination has no exported ONNX file.
     """
     key = (model_name, attention_name)
 
-    if key in _loaded_models:
-        return _loaded_models[key]
+    if key in _session_cache:
+        return _session_cache[key]
 
     if key not in WEIGHT_PATHS:
         available = ", ".join(f"{m}/{a}" for m, a in WEIGHT_PATHS)
         raise KeyError(
-            f"No trained weights for model='{model_name}', "
+            f"No ONNX model for model='{model_name}', "
             f"attention='{attention_name}'. "
             f"Available combinations: {available}"
         )
 
-    ModelClass     = MODEL_REGISTRY[model_name]
-    AttentionClass = ATTENTION_REGISTRY[attention_name]  # may be None for "none"
+    onnx_path = WEIGHT_PATHS[key]
+    if not os.path.exists(onnx_path):
+        raise FileNotFoundError(
+            f"ONNX file not found: {onnx_path}. "
+            "Run codes/export_onnx.py first."
+        )
 
-    model = ModelClass(
-        embedding_matrix=embedding_matrix,
-        hidden_size=HIDDEN_SIZE,
-        output_size=OUTPUT_SIZE,
-        attention_class=AttentionClass,
-        attn_dim=ATTN_DIM,
-        dropout=DROPOUT,
+    sess_options = ort.SessionOptions()
+    sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+
+    session = ort.InferenceSession(
+        onnx_path,
+        sess_options=sess_options,
+        providers=["CPUExecutionProvider"],
     )
 
-    model.load_state_dict(
-        torch.load(WEIGHT_PATHS[key], map_location=device)
-    )
-
-    model.to(device)
-    model.eval()
-
-    _loaded_models[key] = model
-    return model
+    _session_cache[key] = session
+    return session

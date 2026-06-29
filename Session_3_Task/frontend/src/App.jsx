@@ -3,7 +3,7 @@ import AttentionHeatmap from './components/AttentionHeatmap'
 import SentimentBadge from './components/SentimentBadge'
 import ModelSelector, { MODELS, ATTENTIONS } from './components/ModelSelector'
 
-const API_BASE = 'http://127.0.0.1:3000'
+const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://127.0.0.1:3000'
 
 const SAMPLE_REVIEWS = [
   "this movie was absolutely fantastic! the acting was superb and the storyline kept me engaged throughout.",
